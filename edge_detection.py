@@ -1,8 +1,4 @@
 # file name: edge_detection.py
-# usage:
-#    python3 edge_detection.py [file] [threshold]
-# ex: 
-#    python3 edge_detection.py plane.png 50
 
 import matplotlib.pyplot as plt # plt 用於顯示圖片
 import matplotlib.image as mpimg # mpimg 用於讀取圖片
@@ -13,10 +9,13 @@ from scipy import signal
 
 def rgb2gray(rgb, file_type):
     " Turn RGB image to gray image "
-    if(file_type == "jpg"):
+    if file_type == "jpg" or file_type == "epg" or file_type == "JPG": # jpg or jpeg
         return np.dot(rgb[...,:3], [0.299, 0.587, 0.114 ])
-    elif(file_type == "png"):
+    elif file_type == "png":
         return np.dot(rgb[...,:3], [0.299*255, 0.587*255, 0.114*255])
+    else:
+        print("Please input JPG or PNG file")
+        sys.exit(1)
 
 def histogram_equalization(original):
     " Compute histogram equalization"
@@ -29,8 +28,8 @@ def histogram_equalization(original):
         r.append((original == i).sum())
 
 
+    # CDF (Cumulative distribution function)
     MN = original.shape[0] * original.shape[1]
-    # CDF 
     cdf_min = MN
     for i in range(1, 256):
         r[i] = r[i] + r[i-1]
@@ -39,11 +38,10 @@ def histogram_equalization(original):
 
 
     # turn gray value to histogram equalization
-    cdf = np.vectorize(lambda x : r[x])
+    cdf = np.vectorize(lambda x : r[x]) 
     
     rlt = np.around((cdf(original)-cdf_min)/(MN-cdf_min)*255)
     
-
     return rlt
 
 def Laplacian_Mask(x, x1y, xy1):
@@ -116,29 +114,26 @@ def Gaussian_Blur(a, sigma):
     # Normalization
     gaussian_kernel = gaussian_kernel / gaussian_kernel.sum()
 
-    print(gaussian_kernel)
     g = signal.convolve2d(a, gaussian_kernel, boundary='symm', mode='same')
     return g
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "-image", required=True, help = "Input image", dest="img")
+    ap.add_argument("-g", "-gaussion-blur", required=False, help = "Use Gaussion Blur", dest="sigma", default=-1, type=float)
+    ap.add_argument("-he", "-histogram-equalization", required=False, help = "Use Histogram Equalization", action='store_true', default=False)
     ap.add_argument("-s", "-sobel", required=False, help = "Use Sobel operator",action='store_true', default=False)                                             
     ap.add_argument("-l", "-laplacian", required=False, help = "Use Laplacian operator, input threshold", dest="lp_T", default ="-1", type=float)
-    ap.add_argument("-g", "-gaussion-blur", required=False, help = "Use Gaussion Blur", default=-1, type=float)
-    ap.add_argument("-he", "-histogram-equalization", required=False, help = "Use Histogram Equalization", action='store_true', default=False)
 
     args = ap.parse_args()
-
-    print(args)
 
     image = mpimg.imread(args.img)
     gray = rgb2gray(image, args.img[len(args.img)-3:len(args.img)])
 
     out = gray
 
-    if args.g != -1:
-        out = Gaussian_Blur(out, args.g)
+    if args.sigma != -1:
+        out = Gaussian_Blur(out, args.sigma)
 
     if args.he == True:
         out = histogram_equalization(out)
@@ -156,70 +151,3 @@ if __name__ == "__main__":
     plt.imshow(out, cmap='Greys_r')
     plt.axis('off')
     plt.show()       
-# T = float(sys.argv[2]) # threshold for Laplacian Mask
-# inImg = mpimg.imread(image)  # read file 
-
-# turn rgb to gray
-# gray = rgb2gray(inImg, image[len(image)-3:len(image)]) 
-
-
-# print gray level image
-# plt.figure(figsize=(15,8))
-# plt.subplot(2,2,1)
-# plt.imshow(gray, cmap= 'Greys_r')
-# plt.title("Gray level")
-# plt.axis('off')
-
-# plt.subplot(2,2,3)
-# Gaussian blur
-# gb = Gaussian_Blur(gray, float(sys.argv[2]))
-# so = Sobel(gb)
-# plt.imshow(so, cmap= 'Greys_r')
-# plt.title("Gausssian_Blur")
-# plt.axis('off')
-
-
-# print gray level image that used histogram equalization
-# plt.subplot(2,2,2)
-# his = histogram_equalization(gray)
-# so = Sobel(his)
-# plt.imshow(so, cmap= 'Greys_r')
-# plt.title("histogram equalization")
-# plt.axis('off')
-
-
-# plt.subplot(2,2,4)
-# his = histogram_equalization(gb)
-# so = Sobel(his)
-# plt.imshow(so, cmap= 'Greys_r')
-# plt.title("gb+he")
-# plt.axis('off')
-# plt.show()
-# print the image use Laplacian operator without histogram equalization
-# plt.subplot(3,2,3)
-# la = Laplacian(gray)
-# plt.imshow(la, cmap= 'Greys_r')
-# plt.title("Laplacian without histogram equalization")
-# plt.axis('off')
-
-# print the image use Laplacian operator with histogram equalization
-# plt.subplot(3,2,4)
-# la = Laplacian(his)
-# plt.imshow(la, cmap= 'Greys_r')
-# plt.title("Laplacian with histogram equalization")
-# plt.axis('off')
-
-# print the image use Sobel operator without histogram equalization
-# plt.subplot(2,2,3)
-# so = Sobel(gray)
-# plt.imshow(so, cmap= 'Greys_r')
-# plt.title("Sobel no HE")
-# plt.axis('off')
-
-# # print the image use Sobel operator with histogram equalization
-# plt.subplot(3,2,6)
-# so = Sobel(his)
-# plt.imshow(so, cmap= 'Greys_r')
-# plt.title("Sobel HE")
-# plt.axis('off')
-# plt.show()
